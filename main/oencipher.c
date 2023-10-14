@@ -2,7 +2,7 @@
 #include "string.h"
 #include "stdlib.h"
 
-#define KEYSIZE 64
+#define KEYSIZE 8 // 8 byte (64 bit) Key
 
 void main()
 {
@@ -31,19 +31,20 @@ char *encipher(const char *plaintext,   // 64 bit block
                const char **keySchedule // 4 keys
                )                        // encipher plaintext using keySchedule
 {
-    char ciphertext[KEYSIZE];
+    char *ciphertext;
     char *leftString, *rightString;
     char *roundKey;
 
-    strcpy(ciphertext, plaintext);
+    ciphertext = malloc(KEYSIZE * sizeof(char));
+    strncpy(ciphertext, plaintext, KEYSIZE);
 
-    leftString = plaintext;
-    rightString = plaintext + KEYSIZE / 2;
+    leftString = ciphertext;
+    rightString = ciphertext + KEYSIZE / 2;
 
     for (int i = 0; ((roundKey = *keySchedule++) != '\0'); i++)
     {
         leftString = rightString;
-        rightString = stringXOR(leftString, roundFunction(rightString, roundKey));
+        rightString = stringXOR(leftString, roundFunction(rightString, roundKey), KEYSIZE / 2);
     }
     return;
 }
@@ -54,15 +55,18 @@ char *roundFunction(char *substring, // 32 bit block
     return;
 }
 
-char *stringXOR(char *a, char *b)
+char *stringXOR(const char *a, const char *b, int length)
 {
     char *output;
-    char *cp = a;
-    int len = 0;
+    int i = 0;
 
-    for (int i = 0; *cp++ != EOF; len++)
+    output = malloc(length * sizeof(char));
+
+    while (i < length)
     {
-    } // determine the length of the string
+        *output++ = *a++ ^ *b++;
+        i++;
+    }
 
-    return;
+    return output - length;
 }
