@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "string.h"
 #include "stdlib.h"
-
-#define KEYSIZE 8 // 8 byte (64 bit) Key
+#include "stdint.h"
+#include "oencipher.h"
 
 void main()
 {
