@@ -4,69 +4,98 @@
 #include "stdint.h"
 #include "oencipher.h"
 
-void main()
+int main(int argc, char **argv) // program rawfile keyfile mode outfile
 {
-    FILE *rawfile;
-    char ch;
+    FILE *rawfile, *outfile, *keyfile;
+    uint64_t key, plaintext, ciphertext;
+    uint32_t *keySchedule;
+    size_t returnStatus;
 
-    rawfile = fopen("test.txt", "r");
+    // import the key
+    keyfile = fopen(argv[2], "r");
+    // memset(&key, 0, KEYSIZE);
+    returnStatus = fread(&key, 1, KEYSIZE, keyfile);
+    fclose(keyfile);
+    if (returnStatus == 0)
+    {
+        printf("unable to read key\n");
+        return EXIT_FAILURE;
+    }
+    printf("key is: %ld\n", key);
+
+    // generate key schedule
+    keySchedule = generate_roundkeys(key);
+
+    rawfile = fopen(argv[1], "r");
+    outfile = fopen(argv[4], "w");
 
     if (NULL == rawfile)
     {
-        printf("The file coult not be opened.\n");
+        printf("The input file could not be opened.\n");
     }
 
-    printf("the contents of this file are: \n");
-
-    while ((ch = fgetc(rawfile)) != EOF)
+    if (NULL == outfile)
     {
-        printf("%c", ch);
+        printf("The output file could not be opened.\n");
     }
-    printf("\n");
+
+    while (!feof(rawfile))
+    {
+        memset(&plaintext, 0, KEYSIZE);
+        returnStatus = fread(&plaintext, 1, KEYSIZE, rawfile);
+        if (returnStatus == 0)
+        {
+            break;
+        }
+
+        ciphertext = encipher(plaintext, keySchedule);
+
+        fwrite(&ciphertext, 1, KEYSIZE, outfile);
+    }
 
     fclose(rawfile);
+    fclose(outfile);
+    free(keySchedule);
+
+    return EXIT_SUCCESS;
 }
 
-char *encipher(const char *plaintext,   // 64 bit block
-               const char **keySchedule // 4 keys
-               )                        // encipher plaintext using keySchedule
+uint64_t encipher(uint64_t plaintext, uint32_t *keySchedule)
 {
-    char *ciphertext;
-    char *leftString, *rightString;
-    char *roundKey;
+    uint64_t ciphertext;
+    uint32_t leftString, rightString;
 
-    ciphertext = malloc(KEYSIZE * sizeof(char));
-    strncpy(ciphertext, plaintext, KEYSIZE);
+    leftString = (plaintext >> (32)) & 0xFFFFFFFF; // 32 bit shift
+    rightString = plaintext & 0xFFFFFFFF;
 
-    leftString = ciphertext;
-    rightString = ciphertext + KEYSIZE / 2;
-
-    for (int i = 0; ((roundKey = *keySchedule++) != '\0'); i++)
+    int i = 0;
+    while (i < ROUNDS)
     {
         leftString = rightString;
-        rightString = stringXOR(leftString, roundFunction(rightString, roundKey), KEYSIZE / 2);
-    }
-    return;
-}
-
-char *roundFunction(char *substring, // 32 bit block
-                    char *roundKey)
-{
-    return;
-}
-
-char *stringXOR(const char *a, const char *b, int length)
-{
-    char *output;
-    int i = 0;
-
-    output = malloc(length * sizeof(char));
-
-    while (i < length)
-    {
-        *output++ = *a++ ^ *b++;
+        rightString = leftString ^ roundFunction(rightString, keySchedule[i]);
         i++;
     }
 
-    return output - length;
+    return (uint64_t)leftString << 32 | rightString; // recombine string halves
+}
+
+uint32_t roundFunction(uint32_t substring, uint32_t roundKey)
+{
+    substring = (substring << 5) | (substring << 27); // rotation
+    substring ^= roundKey;                            // xor
+    return substring;
+}
+
+uint32_t *generate_roundkeys(uint64_t key)
+{
+    uint32_t *keySchedule;
+
+    keySchedule = malloc(ROUNDS * sizeof(uint32_t));
+
+    keySchedule[0] = (key >> 32) & 0xFFFFFFFF;
+    keySchedule[1] = key & 0xFFFFFFFF;
+    keySchedule[3] = ((key >> 32) ^ key) & 0xFFFFFFFF;
+    keySchedule[3] = ((key >> 32) | key) & 0xFFFFFFFF;
+
+    return keySchedule;
 }

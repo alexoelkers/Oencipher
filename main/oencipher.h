@@ -1,10 +1,13 @@
 #ifndef OENCIPHER_H_
 #define OENCIPHER_H_
 
-#define KEYSIZE 8 // 8 byte (64 bit) Key
+#include "stdint.h"
 
-char *encipher(const char *plaintext, const char **keySchedule);
-char *roundFunction(char *substring, char *roundKey);
-char *stringXOR(const char *a, const char *b, int length);
+#define KEYSIZE sizeof(uint64_t) // 64 bit Key
+#define ROUNDS 4
+
+uint64_t encipher(uint64_t plaintext, uint32_t *keySchedule);
+uint32_t roundFunction(uint32_t substring, uint32_t roundKey);
+uint32_t *generate_roundkeys(uint64_t key);
 
 #endif
