@@ -1,2 +1,0 @@
-This is a test function, to see whether 
-there are any workable outputs produced by this method. 
