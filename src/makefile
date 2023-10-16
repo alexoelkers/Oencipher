@@ -1,7 +1,7 @@
 all: cipher
 
 cipher: main.o
-	gcc -o cipher main.c ../libs/oencipher.o ../libs/oencipher.h
+	gcc -o cipher main.o ../libs/feistel.o ../libs/feistel.h
 
 main.o:
 	gcc -c main.c

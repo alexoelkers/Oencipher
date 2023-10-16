@@ -1,5 +1,5 @@
-oencipher.o: oencipher.c
-	gcc -c oencipher.c
+feistel.o: feistel.c
+	gcc -c feistel.c
 
 clean:
 	rm -rf *.o

@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "stdlib.h"
-#include "string.h"
+#include <stdlib.h>
+#include <string.h>
 #include "../libs/feistel.h"
 
 int main(int argc, char **argv) // program rawfile keyfile mode outfile
@@ -16,23 +16,23 @@ int main(int argc, char **argv) // program rawfile keyfile mode outfile
     fclose(keyfile);
     if (returnStatus == 0)
     {
-        printf("unable to read key\n");
+        fprintf(stderr, "unable to read key\n");
         return EXIT_FAILURE;
     }
-    printf("key is: %ld\n", key);
+    fprintf(stderr, "key is: %ld\n", key);
 
     rawfile = fopen(argv[1], "r");
     outfile = fopen(argv[4], "w");
 
     if (NULL == rawfile)
     {
-        printf("The input file could not be opened.\n");
+        fprintf(stderr, "The input file could not be opened.\n");
         return EXIT_FAILURE;
     }
 
     if (NULL == outfile)
     {
-        printf("The output file could not be opened.\n");
+        fprintf(stderr, "The output file could not be opened.\n");
         return EXIT_FAILURE;
     }
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv) // program rawfile keyfile mode outfile
         returnStatus = encrypt_decrypt(rawfile, key, outfile, 0);
         if (returnStatus == 1)
         {
-            printf("encryption failed.\n");
+            fprintf(stderr, "encryption failed.\n");
             return EXIT_FAILURE;
         }
     }
@@ -51,7 +51,7 @@ int main(int argc, char **argv) // program rawfile keyfile mode outfile
         returnStatus = encrypt_decrypt(rawfile, key, outfile, 1);
         if (returnStatus == 1)
         {
-            printf("decryption failed.\n");
+            fprintf(stderr, "decryption failed.\n");
             return EXIT_FAILURE;
         }
     }

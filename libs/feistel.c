@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include "string.h"
-#include "stdlib.h"
-#include "stdint.h"
-#include "oencipher.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include "feistel.h"
 
 uint64_t encipher(uint64_t plaintext, uint32_t *keySchedule);
 uint64_t decipher(uint64_t ciphertext, uint32_t *keySchedule);
@@ -17,6 +17,11 @@ int encrypt_decrypt(FILE *rawfile, uint64_t key, FILE *outfile, int mode)
 
     // generate key schedule
     keySchedule = generate_roundkeys(key);
+    if (keySchedule == NULL)
+    {
+        fprintf(stderr, "Malloc failed.\n");
+        return EXIT_FAILURE;
+    }
 
     // encipher all plaintext
     while (!feof(rawfile))
@@ -59,15 +64,15 @@ uint64_t encipher(uint64_t plaintext, uint32_t *keySchedule)
         i++;
     }
 
-    return (uint64_t)leftString << 32 | rightString; // recombine string halves
+    return (uint64_t)rightString << 32 | leftString; // recombine string halves
 }
 
 uint64_t decipher(uint64_t ciphertext, uint32_t *keySchedule)
 {
     uint32_t leftString, rightString;
 
-    leftString = (ciphertext >> 32) & 0xFFFFFFFF; // 32 bit shift
-    rightString = ciphertext & 0xFFFFFFFF;
+    rightString = (ciphertext >> 32) & 0xFFFFFFFF; // 32 bit shift
+    leftString = ciphertext & 0xFFFFFFFF;
 
     int i = 1;
     while (i <= ROUNDS)
@@ -92,6 +97,11 @@ uint32_t *generate_roundkeys(uint64_t key)
     uint32_t *keySchedule;
 
     keySchedule = malloc(ROUNDS * sizeof(uint32_t));
+
+    if (keySchedule == NULL)
+    {
+        return keySchedule;
+    }
 
     keySchedule[0] = (key >> 32) & 0xFFFFFFFF;
     keySchedule[1] = key & 0xFFFFFFFF;

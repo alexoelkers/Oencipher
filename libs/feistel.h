@@ -1,7 +1,7 @@
 #ifndef FEISTEL_H_
 #define FEISTEL_H_
 
-#include "stdint.h"
+#include <stdint.h>
 #include <stdio.h>
 
 #define KEYSIZE sizeof(uint64_t) // 64 bit Key
