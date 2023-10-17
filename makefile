@@ -1,11 +1,12 @@
-all: src/main.c
+all: src/main.c libs/feistel.c
 	$(MAKE) -C libs
 	$(MAKE) -C src
+	cp ./src/cipher ./test
 
 clean:
 	rm libs/*.o
 	rm src/*.o src/cipher
-	rm src/out.txt src/r.txt
+	rm test/cipher
 
 test: all
 	cd src
