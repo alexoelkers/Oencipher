@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define ROUNDS 4
+#define BLANK (int)' '
 
 uint64_t encipher(uint64_t plaintext, const uint32_t *keySchedule);
 uint64_t decipher(uint64_t ciphertext, const uint32_t *keySchedule);
@@ -36,14 +37,13 @@ int encrypt_decrypt(FILE *rawfile, uint64_t key, FILE *outfile, int mode) {
 
     // encipher all plaintext
     while (!feof(rawfile)) {
-        memset(&rawtext, 0, KEYSIZE);
-        returnStatus = fread(&rawtext, KEYSIZE, 1, rawfile);
+        memset(&rawtext, BLANK, KEYSIZE);
+        returnStatus = fread(&rawtext, 1, KEYSIZE, rawfile);
         if (returnStatus == 0) {
             break;
         }
-
         ciphertext = (*cipherFunction)(rawtext, keySchedule);
-        fwrite(&ciphertext, KEYSIZE, 1, outfile);
+        fwrite(&ciphertext, 1, KEYSIZE, outfile);
     }
 
     free(keySchedule);
@@ -83,7 +83,6 @@ uint64_t decipher(uint64_t ciphertext, const uint32_t *keySchedule) {
 }
 
 uint32_t roundFunction(uint32_t substring, uint32_t roundKey) {
-    printf("key: %d\n", roundKey);
     substring = (substring << 5) | (substring >> 27);  // rotation
     substring ^= roundKey;                             // xor
     return substring;

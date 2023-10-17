@@ -6,15 +6,15 @@
 
 int main(int argc, char **argv)  // program rawfile keyfile mode outfile
 {
-    FILE *rawfile, *outfile, *keyfile;
+    FILE *rawfile, *outfile;
     size_t returnStatus;
     uint64_t key;
 
-    // import the key
-    keyfile = fopen(argv[2], "r");
+    // import the key using rawfile
+    rawfile = fopen(argv[2], "r");
 
-    returnStatus = fread(&key, 1, KEYSIZE, keyfile);
-    fclose(keyfile);
+    returnStatus = fread(&key, KEYSIZE, 1, rawfile);
+    fclose(rawfile);
     if (returnStatus == 0) {
         fprintf(stderr, "unable to read key\n");
         return EXIT_FAILURE;
@@ -22,15 +22,14 @@ int main(int argc, char **argv)  // program rawfile keyfile mode outfile
 
     fprintf(stderr, "key is: %ld\n", key);
 
+    // open plaintext and create ciphertext files
     rawfile = fopen(argv[1], "r");
     outfile = fopen(argv[4], "w");
 
     if (NULL == rawfile) {
         fprintf(stderr, "The input file could not be opened.\n");
         return EXIT_FAILURE;
-    }
-
-    if (NULL == outfile) {
+    } else if (NULL == outfile) {
         fprintf(stderr, "The output file could not be opened.\n");
         return EXIT_FAILURE;
     }
