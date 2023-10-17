@@ -5,11 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define KEYSIZE sizeof(uint64_t)  // 64 bit Key
 #define ROUNDS 4
 
-uint64_t encipher(uint64_t plaintext, uint32_t *keySchedule);
-uint64_t decipher(uint64_t ciphertext, uint32_t *keySchedule);
+uint64_t encipher(uint64_t plaintext, const uint32_t *keySchedule);
+uint64_t decipher(uint64_t ciphertext, const uint32_t *keySchedule);
 uint32_t roundFunction(uint32_t substring, uint32_t roundKey);
 uint32_t *generate_roundkeys(uint64_t key);
 
@@ -17,12 +16,15 @@ int encrypt_decrypt(FILE *rawfile, uint64_t key, FILE *outfile, int mode) {
     uint64_t rawtext, ciphertext;
     uint32_t *keySchedule;
     size_t returnStatus;
-    uint64_t (*cipherFunction)(uint64_t, uint32_t *);
+    uint64_t (*cipherFunction)(uint64_t, const uint32_t *);
 
     if (mode == ENCRYPT) {
         cipherFunction = &encipher;
     } else if (mode == DECRYPT) {
         cipherFunction = &decipher;
+    } else {
+        fprintf(stderr, "invalid mode.\n");
+        return EXIT_FAILURE;
     }
 
     // generate key schedule
@@ -48,33 +50,33 @@ int encrypt_decrypt(FILE *rawfile, uint64_t key, FILE *outfile, int mode) {
     return EXIT_SUCCESS;
 }
 
-uint64_t encipher(uint64_t plaintext, uint32_t *keySchedule) {
-    uint32_t leftString, rightString;
+uint64_t encipher(uint64_t plaintext, const uint32_t *keySchedule) {
+    uint32_t leftString, rightString, nextLeftString, nextRightString;
 
     leftString = (plaintext >> (32)) & 0xFFFFFFFF;  // 32 bit shift
     rightString = plaintext & 0xFFFFFFFF;
 
-    int i = 0;
-    while (i < ROUNDS) {
-        leftString = rightString;
-        rightString = leftString ^ roundFunction(rightString, keySchedule[i]);
-        i++;
+    for (int i = 0; i < ROUNDS; i++) {
+        nextLeftString = rightString;
+        nextRightString = leftString ^ roundFunction(rightString, keySchedule[i]);
+        leftString = nextLeftString;
+        rightString = nextRightString;
     }
 
     return (uint64_t)rightString << 32 | leftString;  // recombine string halves
 }
 
-uint64_t decipher(uint64_t ciphertext, uint32_t *keySchedule) {
-    uint32_t leftString, rightString;
-
+uint64_t decipher(uint64_t ciphertext, const uint32_t *keySchedule) {
+    uint32_t leftString, rightString, nextLeftString, nextRightString;
+    // reversed in decryption
     rightString = (ciphertext >> 32) & 0xFFFFFFFF;  // 32 bit shift
     leftString = ciphertext & 0xFFFFFFFF;
 
-    int i = 0;
-    while (i < ROUNDS) {
-        rightString = leftString;
-        leftString = rightString ^ roundFunction(leftString, keySchedule[ROUNDS - (i + 1)]);
-        i++;
+    for (int i = ROUNDS - 1; i >= 0; i--) {
+        nextRightString = leftString;
+        nextLeftString = rightString ^ roundFunction(leftString, keySchedule[i]);
+        leftString = nextLeftString;
+        rightString = nextRightString;
     }
 
     return (uint64_t)leftString << 32 | rightString;  // recombine string halves
@@ -83,7 +85,7 @@ uint64_t decipher(uint64_t ciphertext, uint32_t *keySchedule) {
 uint32_t roundFunction(uint32_t substring, uint32_t roundKey) {
     printf("key: %d\n", roundKey);
     substring = (substring << 5) | (substring >> 27);  // rotation
-    substring = substring ^ roundKey;                  // xor
+    substring ^= roundKey;                             // xor
     return substring;
 }
 
